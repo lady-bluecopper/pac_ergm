@@ -1,0 +1,91 @@
+defaults:
+  - _self_
+
+backend: "pac"
+
+# --- Data: University 2005 network (Sailer) ---
+data:
+  edges_path: "../data/office_sailer/office_uni2005_edges.csv"
+  nodes_path: "../data/office_sailer/office_uni2005_nodes.csv"
+  edgecov:
+    use:    "../data/office_sailer/uni2005_cov/use.csv"
+    team:   "../data/office_sailer/uni2005_cov/team.csv"
+    floor:  "../data/office_sailer/uni2005_cov/floor.csv"
+    metric: "../data/office_sailer/uni2005_cov/metric.csv"
+  is_directed: true
+
+
+# --- Model (Specification 3: Specification 2 + geometrically weighted degrees) ---
+model:
+  statistic_terms: "edges + mutual + gwesp(0.5) + gwodeg(0.5) + gwideg(0.5) + edgecov(use) + edgecov(team) + edgecov(floor) + edgecov(metric)"
+
+# --- PAC ---
+# NOTE: epsilon and norm_scale are computed by the band-calibration (PROBE) cell
+# (deterministic, seed=42), so they are intentionally NOT set here.
+pac:
+  norm: "l2"
+  delta: 0.1                 # target coverage P(G in A) >= 1 - delta
+  n_bootstrap: 2000          # B: bootstrap replicates for the band calibration (PROBE)
+
+# --- MCMC proposal ---
+proposal:
+  kind: "neighborhood"       # mixture: transitive-triangle move + TNT
+  p_nbhd: 0.5                # prob. of the triangle move; otherwise a plain TNT move
+
+# --- PAC estimation (outer loop) ---
+# Definitive run (notebooks/PAC_office_uni2005_gwdeg_final.ipynb), same settings as the
+# definitive Specification-2 run. The earlier run (output/PAC_office_uni2005_GWDEG: a0=2,
+# burn-in 30k, 200 iterations, median coverage) is used only as the starting point.
+estimation:
+  warm_start: "mple"         # used only when theta_init is absent
+  # starting theta: Polyak estimate of the earlier run. The MPLE of this model is degenerate
+  # (the ERGM simulated at the MPLE has a median of 823 edges against 211) and lies far along
+  # the slowest direction of the RM (eigenvalue 0.026 of D0^-1 Sigma). Delete to start from the MPLE.
+  theta_init: [-2.3345, 0.8163, 0.7316, -2.3936, 0.2614, 0.8073, 1.1550, -0.0387, -0.0520]
+  nu_init: 10.0              # starting value of nu (at theta_init, nu = 5 already gives coverage ~0.95)
+  nu_step: 2.5               # Robbins-Monro step length for nu
+  nu_decay: 0.002            # RM decay coefficient for nu (step 2.5 -> 0.83 at iteration 1000)
+  penalty: "logistic"        # inner-loop penalty: smooth sigmoid (helps mixing)
+  tau_factor: 16             # tau = epsilon / tau_factor (logistic sharpness), as in Specifications 1-2
+  theta_update: "rm_diag"    # rm_diag | rm | rm_cov
+  theta_decay: 0.001         # theta step = step_size / (1 + theta_decay * t): 0.3 -> 0.15
+
+# --- Goodness of fit ---
+gof:
+  n_samples: 200             # samples for the sufficient-statistics GoF ...
+  interval: 100000           # ... one every 100k steps after a 1M burn-in: the same draws as
+  burnin: 1000000            #     ergm's simulate() for the ERGM baseline (up to 21M steps)
+  penalty: "hard"            # GoF always uses the exact 0/1 band indicator
+  seed: 42
+  n_networks: 150            # simulated networks for the degree/ESP GoF
+  net_chains: 6              # ... drawn from 6 long chains (25 networks each), as ergm's simulate()
+  net_burnin: 1000000        # burn-in of each of those chains
+  net_gap: 800000            # steps between two networks of the same chain
+  net_seed: 7
+
+# --- Control ---
+control:
+  n_iter: 1000               # outer loop iterations
+  interval: 1000             # MCMC thinning
+  burnin: 500000             # steps discarded at every iteration (chains restart from G_obs):
+                             # at theta_init the coverage of chains from G_obs is stable after 200k
+  mcmc_samples: 200          # samples recorded per chain (a window of 200k steps)
+  step_size: 0.3             # a_0 of the diagonal RM on theta: 0.3 * lambda_max(D0^-1 Sigma) = 0.3 * 3.87 ~ 1.16 < 2
+  polyak_window: 200         # final iterations averaged for theta (median for nu, in the notebook)
+  n_chains: 8                # independent chains per iteration
+  n_jobs: 8                  # ... run in parallel
+  coverage_agg: "mean"       # coverage for the nu update: mean over the chains (median for g_bar)
+
+# --- ERGM Settings ---
+ergm:
+  nsim: 200
+  maxd: 15
+  mcmle_ess: 64
+  mcmle_maxit: 60
+  sim_burnin: 1000000
+  sim_interval: 100000
+  seed: 1
+
+verbose: true
+seed: 42
+out_dir: "../output"

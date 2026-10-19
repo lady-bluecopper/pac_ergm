@@ -1,0 +1,76 @@
+defaults: [_self_]
+backend: "pac"
+
+# --- Data (DIRECTED network: two CSVs) ---
+data:
+  edges_path: "../data/ukfaculty_edges.csv"    # from,to  (0-based, directed)
+  nodes_path: "../data/ukfaculty_nodes.csv"    # id,Group,GroupC
+  is_directed: true
+
+# --- Model Specification ---
+model:
+  statistic_terms: "edges + nodematch(GroupC) + nodefactor(GroupC, base=3) + gwesp(0.25)"
+
+# --- PAC ---
+pac:
+  norm: "l2"
+  delta: 0.1                 # target coverage P(G in A) >= 1 - delta
+  n_bootstrap: 2000          # B della PROBE (Band calibration)
+
+# --- Proposta MCMC ---
+proposal:                    
+  kind: "neighborhood"
+  p_nbhd: 0.5                # probability of the transitive-triangle (neighborhood) move; otherwise a plain TNT move
+
+# --- Stima PAC (outer loop) ---
+estimation:                  
+  warm_start: "mple"         # theta_init dal MPLE, used only when theta_init below is null
+  theta_init: [-5.990, 1.555, 0.004, 0.109, 2.234]   # warm start (stage 2): theta at iteration 1000/1000 of stage 1 = output/run_20260925_152807_PAC_ukFaculty_GWESP_final (burn-in 200k, median coverage; nu there 0.7295)
+  nu_init: 1.0
+  nu_step: 2.5               # lenght of RM step for nu
+  nu_decay: 0.005             # decay coefficient of RM for nu
+  penalty: "logistic"        # "logistic": sigmoid band membership
+  tau_factor: 16             # tau = epsilon / tau_factor
+  theta_update: "rm_diag"    # rm_diag | rm | rm_cov
+  theta_decay: 0.0005
+
+
+# --- Goodness of fit ---
+gof:                        
+  n_samples: 5000
+  interval: 10000
+  burnin: 1000000
+  penalty: "hard"             # "hard": exact 0/1 band indicator (the true model)
+  seed: 42
+  n_networks: 100            # simulated networks for the degree/ESP GoF (sample_networks)
+  net_burnin: 200000
+  net_gap: 5000
+  net_seed: 7
+
+# --- MCMC Control ---
+# Base values. The final notebook uses diagonal RM and overrides some fields
+# after band calibration, in particular step_size.
+control:
+  n_iter: 100                # outer iterations (stage 2, warm start from stage 1)
+  interval: 1000             # steps between two recorded samples
+  burnin: 2000000            # every iteration (chains restart from G_obs): long enough to see escapes from the band
+  mcmc_samples: 250          # samples per chain (a window of 250k steps)
+  step_size: 0.3
+  polyak_window: 30          # final iterations averaged for theta
+  n_chains: 8
+  n_jobs: 8
+  coverage_agg: "mean"       # coverage for the nu update: mean over the chains (median for g_bar)
+
+# --- ERGM Settings ---
+ergm:
+  nsim: 200
+  maxd: 25
+  mcmle_ess: 200
+  mcmle_maxit: 20
+  sim_burnin: 1000000
+  sim_interval: 100000
+  seed: 1
+
+verbose: true
+seed: 42
+out_dir: "../output"

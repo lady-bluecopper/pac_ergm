@@ -1,0 +1,10 @@
+hydra-core
+ipykernel
+joblib
+jupyter
+matplotlib
+numpy
+omegaconf
+pandas
+scikit-learn
+scipy

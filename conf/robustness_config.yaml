@@ -1,0 +1,33 @@
+# Number of independent repetitions for every specification.
+n_tests: 5
+
+# All outputs from this experiment.
+out_dir: ../output/robustness
+run_gof: true
+save_history: true
+
+specifications:
+  - id: 1
+    name: spec1
+    config: config_spec_1.yaml
+    stages:
+      - name: stage1
+        overrides:
+          control.n_iter: 1000
+          control.burnin: 200000
+          control.polyak_window: 200
+          control.coverage_agg: median
+          estimation.nu_init: 10.0
+      - name: stage2
+        start_from: previous_last
+        round_start: 3
+        # The final Spec. 1 run reports nu as the mean of the last 20 iterations.
+        nu_summary:
+          method: mean_last
+          n: 20
+  - id: 2
+    name: spec2
+    config: config_spec_2.yaml
+  - id: 3
+    name: spec3
+    config: config_spec_3.yaml

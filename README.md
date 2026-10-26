@@ -165,3 +165,13 @@ python scripts/scalability_run.py
 ```
 
 Results are written under `output/scalability/run_<timestamp>/`. The runner records fitting and simulation times together with the network size and fitted BaCon quantities.
+
+## Robustness experiment
+
+The robustness experiment runs BaCon *n_tests* times for each specification listed in the config file *robustness_config.yaml*:
+
+```bash
+python scripts/robustness_run.py conf/robustness.yaml
+```
+
+Results are written under `output/robustness/`.

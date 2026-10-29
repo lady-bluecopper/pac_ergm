@@ -1,0 +1,120 @@
+{
+  "specification": 3,
+  "n_seeds": 5,
+  "r_grid": [0.5, 1, 1.5, 2, 3, 4, 6, 8],
+  "out_dir": "output/tapered",
+
+  "simulation": {
+    "nsim": 200,
+    "seed_offset": 1000,
+    "control": {
+      "MCMC.burnin": 1000000,
+      "MCMC.interval": 100000
+    }
+  },
+
+  "estimation": {
+    "family": "taper",
+    "taper_terms": "all",
+    "centers": null,
+    "fixed": true,
+    "estimate": "MLE",
+    "beta": null,
+    "tau": null,
+    "response": null,
+    "constraints": "~.",
+    "reference": "~Bernoulli"
+  },
+
+  "control": {
+    "MCMC.interval": 100,
+    "MCMC.burnin": 1000,
+    "MCMLE.maxit": 1000
+  },
+
+  "specifications": {
+    "1": {
+      "files": {
+        "nodes": "data/ukfaculty_nodes.csv",
+        "edges": "data/ukfaculty_edges.csv"
+      },
+      "directed": true,
+      "zero_based": true,
+      "node_attributes": {
+        "GroupC": "GroupC"
+      },
+      "model": {
+        "terms": "edges + nodematch(\"GroupC\") + nodefactor(\"GroupC\", base=3) + gwesp(decay=0.25, fixed=TRUE)",
+        "labels": [
+          "edges",
+          "nodematch.GroupC",
+          "nodefactor.GroupC.1",
+          "nodefactor.GroupC.2",
+          "gwesp"
+        ],
+        "thetas": null,
+        "learn_thetas": true
+      }
+    },
+
+    "2": {
+      "n_vertices": 67,
+      "files": {
+        "edges": "data/office_sailer/office_uni2005_edges.csv"
+      },
+      "edgecov": {
+        "m_use": "data/office_sailer/uni2005_cov/use.csv",
+        "m_team": "data/office_sailer/uni2005_cov/team.csv",
+        "m_flr": "data/office_sailer/uni2005_cov/floor.csv",
+        "m_met": "data/office_sailer/uni2005_cov/metric.csv"
+      },
+      "directed": true,
+      "zero_based": true,
+      "model": {
+        "terms": "edges + mutual + gwesp(decay=0.5, fixed=TRUE) + edgecov(m_use) + edgecov(m_team) + edgecov(m_flr) + edgecov(m_met)",
+        "labels": [
+          "edges",
+          "mutual",
+          "gwesp",
+          "edgecov.use",
+          "edgecov.team",
+          "edgecov.floor",
+          "edgecov.metric"
+        ],
+        "thetas": null,
+        "learn_thetas": true
+      }
+    },
+
+    "3": {
+      "n_vertices": 67,
+      "files": {
+        "edges": "data/office_sailer/office_uni2005_edges.csv"
+      },
+      "edgecov": {
+        "m_use": "data/office_sailer/uni2005_cov/use.csv",
+        "m_team": "data/office_sailer/uni2005_cov/team.csv",
+        "m_flr": "data/office_sailer/uni2005_cov/floor.csv",
+        "m_met": "data/office_sailer/uni2005_cov/metric.csv"
+      },
+      "directed": true,
+      "zero_based": true,
+      "model": {
+        "terms": "edges + mutual + gwesp(decay=0.5, fixed=TRUE) + gwodegree(decay=0.5, fixed=TRUE) + gwidegree(decay=0.5, fixed=TRUE) + edgecov(m_use) + edgecov(m_team) + edgecov(m_flr) + edgecov(m_met)",
+        "labels": [
+          "edges",
+          "mutual",
+          "gwesp",
+          "gwodeg",
+          "gwideg",
+          "edgecov.use",
+          "edgecov.team",
+          "edgecov.floor",
+          "edgecov.metric"
+        ],
+        "thetas": null,
+        "learn_thetas": true
+      }
+    }
+  }
+}
